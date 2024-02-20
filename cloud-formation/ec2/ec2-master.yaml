@@ -10,6 +10,9 @@ Resources:
       KeyName: ckad-key # Replace with your existing key pair
       SecurityGroupIds:
       - !Ref MySecurityGroup
+      Tags:
+      - Key: Name
+        Value: MyEC2Instance
 
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
