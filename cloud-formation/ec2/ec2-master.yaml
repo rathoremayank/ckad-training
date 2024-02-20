@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an EC2 instance with Ubuntu 22.04
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c7217cdde317cfec # Ubuntu 22.04 LTS AMI ID
+      KeyName: ckad-key # Replace with your existing key pair
+      SecurityGroupIds:
+      - !Ref MySecurityGroup
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0 # Adjust this to your IP range for security
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the newly created EC2 instance
+    Value: !Ref MyEC2Instance
+  PublicIp:
+    Description: Public IP address of the newly created EC2 instance
+    Value: !GetAtt MyEC2Instance.PublicIp
