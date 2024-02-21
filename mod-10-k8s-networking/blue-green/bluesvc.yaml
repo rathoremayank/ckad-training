@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-nodesvc
+  labels:
+    app: nginx
+    version: blue
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    nodePort: 31010
+    protocol: TCP
+  selector:
+    app: nginx
+    version: blue
