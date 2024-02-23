@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create a VPC, public subnet, EC2 instances with UserData, and KeyPair
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyInternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref MyInternetGateway
+
+  MyPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet
+
+  MyKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: kube-key-new
+      Tags:
+        - Key: Name
+          Value: MyKeyPair
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0 # Adjust this to your IP range for security
+
+  MyInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.medium
+      SubnetId: !Ref MyPublicSubnet
+      ImageId: ami-0c7217cdde317cfec
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 16
+            VolumeType: gp2
+      KeyName: ckad-key
+      #SecurityGroupIds:
+        #- !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: k8s-cluster-master-cft
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common  -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+          sudo apt update
+          apt-cache policy docker-ce -y
+          sudo apt install docker-ce -y
+          wget -q -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          echo deb http://apt.kubernetes.io/ kubernetes-xenial main | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          apt update
+          apt install kubelet=1.21.1-00 kubeadm=1.21.1-00 kubectl=1.21.1-00 -y
+          sysctl net.bridge.bridge-nf-call-iptables=1
+
+  MyInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      SubnetId: !Ref MyPublicSubnet
+      ImageId: ami-0c7217cdde317cfec
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 16
+            VolumeType: gp2
+      KeyName: ckad-key
+      #SecurityGroupIds:
+      #  - !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: k8s-cluster-worker1-cft
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common  -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+          sudo apt update
+          apt-cache policy docker-ce -y
+          sudo apt install docker-ce -y
+          wget -q -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          echo deb http://apt.kubernetes.io/ kubernetes-xenial main | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          apt update
+          apt install kubelet=1.21.1-00 kubeadm=1.21.1-00 kubectl=1.21.1-00 -y
+          sysctl net.bridge.bridge-nf-call-iptables=1
+
+
+  MyInstance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      SubnetId: !Ref MyPublicSubnet
+      ImageId: ami-0c7217cdde317cfec
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 16
+            VolumeType: gp2
+      KeyName: ckad-key
+      #SecurityGroupIds:
+      #  - !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: k8s-cluster-worker2-cft
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common  -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+          sudo apt update
+          apt-cache policy docker-ce -y
+          sudo apt install docker-ce -y
+          wget -q -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          echo deb http://apt.kubernetes.io/ kubernetes-xenial main | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          apt update
+          apt install kubelet=1.21.1-00 kubeadm=1.21.1-00 kubectl=1.21.1-00 -y
+          sysctl net.bridge.bridge-nf-call-iptables=1
